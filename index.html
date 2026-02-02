@@ -16,112 +16,47 @@
 }
 
 body{ 
-  margin:0; 
-  font-family:Poppins,sans-serif; 
-  background:var(--bg); 
-  color:var(--text);
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+  margin:0; font-family:Poppins,sans-serif; background:var(--bg); color:var(--text);
+  display: flex; flex-direction: column; min-height: 100vh;
 }
 
-header{ text-align:center; padding:20px; background: #fff; border-bottom: 1px solid #e2e8f0; }
-header h1{ margin:0; font-size: 1.4rem; color: var(--btn); }
+header{ text-align:center; padding:15px; background: #fff; border-bottom: 1px solid #e2e8f0; }
+header h1{ margin:0; font-size: 1.3rem; color: var(--btn); }
 
 .main{
-  display:grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap:20px;
-  padding: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
-  flex: 1; /* Để phần main chiếm diện tích còn lại */
+  display:grid; grid-template-columns: 1.2fr 1fr; gap:20px;
+  padding: 20px; max-width: 1400px; margin: 0 auto; flex: 1;
 }
 
-/* Giao diện điện thoại */
 @media(max-width:900px){ 
-  .main{ 
-    grid-template-columns: 1fr; 
-    padding: 10px;
-    gap: 15px;
-  }
-  .video-container {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: var(--bg);
-    padding-bottom: 10px;
-  }
+  .main{ grid-template-columns: 1fr; padding: 10px; }
+  .video-container { position: sticky; top: 0; z-index: 100; background: var(--bg); padding-bottom: 10px; }
 }
 
-.card{
-  background:var(--card);
-  border-radius:16px;
-  padding:15px;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-}
+.card{ background:var(--card); border-radius:16px; padding:15px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
 
-.subtitle-box{
-  /* Trên PC thì cuộn trong box, trên Mobile thì cuộn theo trang */
-  overflow-y: visible; 
-}
+.subtitle-box { overflow-y: visible; }
+@media(min-width:901px) { .subtitle-box { height: 75vh; overflow-y: auto; } }
 
-@media(min-width:901px) {
-  .subtitle-box {
-    height: 75vh;
-    overflow-y: auto;
-  }
-}
-
-.subtitle-line{
-  padding:18px;
-  margin-bottom:12px;
-  border-radius:12px;
-  border: 1px solid #f1f5f9;
-  transition: all 0.2s ease;
-  background: #fff;
-}
-
-.subtitle-line.active{ 
-  background: var(--active); 
-  border-color: #3b82f6;
-}
+.subtitle-line{ padding:18px; margin-bottom:12px; border-radius:12px; border: 1px solid #f1f5f9; background: #fff; }
+.subtitle-line.active{ background: var(--active); border-color: #3b82f6; }
 
 .row{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom: 5px; }
-input{ padding:10px; border-radius:10px; border:1.5px solid #cbd5e1; width:150px; outline:none; }
+input{ padding:10px; border-radius:10px; border:1.5px solid #cbd5e1; width:150px; outline:none; font-size: 16px; }
 
-button{
-  padding:10px 20px; border:none; border-radius:10px; cursor:pointer;
-  background:var(--btn); color:white; font-weight:600;
-}
+button{ padding:10px 20px; border:none; border-radius:10px; cursor:pointer; background:var(--btn); color:white; font-weight:600; }
 
-.result{ font-size: 14px; font-weight: 600; }
+.result{ font-size: 14px; font-weight: 600; margin-left: 5px; }
 .correct{ color:#10b981; }
 .wrong{ color:#ef4444; }
 
-/* Phần tổng kết nằm dưới cùng */
-.summary-footer {
-  margin-top: auto;
-  padding: 20px;
-  background: #fff;
-  border-top: 1px solid #e2e8f0;
-  text-align: center;
-}
+.summary-footer { margin-top: auto; padding: 20px; background: #fff; border-top: 1px solid #e2e8f0; text-align: center; }
 
-.switch-container {
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  margin-bottom: 10px; font-size: 0.85rem; font-weight: 600;
-}
+.switch-container { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; font-size: 0.85rem; font-weight: 600; }
 .switch { position: relative; display: inline-block; width: 36px; height: 18px; }
 .switch input { opacity: 0; width: 0; height: 0; }
-.slider {
-  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #ccc; transition: .4s; border-radius: 20px;
-}
-.slider:before {
-  position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px;
-  background-color: white; transition: .4s; border-radius: 50%;
-}
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
+.slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
 input:checked + .slider { background-color: var(--btn); }
 input:checked + .slider:before { transform: translateX(18px); }
 </style>
@@ -129,31 +64,22 @@ input:checked + .slider:before { transform: translateX(18px); }
 
 <body>
 
-<header>
-  <h1>Learn English with Ms. Thúy</h1>
-</header>
+<header><h1>Learn English with Ms. Thúy</h1></header>
 
 <div class="main">
   <div class="video-container">
     <div class="card">
       <div class="switch-container">
         <span>Tự động dừng video</span>
-        <label class="switch">
-          <input type="checkbox" id="autoPauseToggle" checked>
-          <span class="slider"></span>
-        </label>
+        <label class="switch"><input type="checkbox" id="autoPauseToggle" checked><span class="slider"></span></label>
       </div>
       <div style="position:relative; padding-bottom:56.25%; height:0; border-radius:12px; overflow:hidden; background:#000;">
         <iframe id="player" style="position:absolute; top:0; left:0; width:100%; height:100%;"
-          src="https://www.youtube.com/embed/FjU9qyTZ_OU?enablejsapi=1" 
-          frameborder="0" allowfullscreen></iframe>
+          src="https://www.youtube.com/embed/FjU9qyTZ_OU?enablejsapi=1" frameborder="0" allowfullscreen></iframe>
       </div>
     </div>
   </div>
-
-  <div class="subtitle-box" id="subs">
-      <p style="text-align:center;">Đang tải phụ đề...</p>
-  </div>
+  <div class="subtitle-box" id="subs"><p style="text-align:center;">Đang tải bài tập...</p></div>
 </div>
 
 <div class="summary-footer">
@@ -166,7 +92,7 @@ let player;
 let subtitles = [], results = [];
 let currentLineIndex = -1;
 let pausedIndices = new Set();
-const stopWords=["the","a","an","to","of","and","or","is","was","were","be","have","has","had","in","on","at","for","with","that","this","it","as","by","from","but","so","if","then","than"];
+const stopWords=["the","a","an","to","of","and","or","is","was","were","be","have","has","had","in","on","at","for","with","that","this","it","as","by","from","but","so","if","then","than","you","are","aren't","your","my","their","his","her"];
 
 function onYouTubeIframeAPIReady(){ player = new YT.Player('player'); }
 const tag = document.createElement('script');
@@ -178,9 +104,26 @@ function timeToSec(t){
     return parseFloat(parts[0])*3600 + parseFloat(parts[1])*60 + parseFloat(parts[2]);
 }
 
+// HÀM CHỌN TỪ KHÓA CẢI TIẾN - SỬA LỖI KHÔNG ĐỤC LỖ
 function chooseKeyword(sentence){
-    const words = sentence.toLowerCase().replace(/[^a-z\s]/g,"").split(" ").filter(w => w.length > 3 && !stopWords.includes(w));
-    return words.length > 0 ? words[Math.floor(words.length/2)] : "sugar";
+    // Loại bỏ dấu câu và tách từ
+    let cleanWords = sentence.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"").split(/\s+/);
+    
+    // Tìm các từ không nằm trong danh sách cấm và dài > 3 ký tự
+    let candidates = cleanWords.filter(w => w.length > 3 && !stopWords.includes(w.toLowerCase()));
+    
+    // Nếu không có từ > 3 ký tự, lấy các từ không nằm trong danh sách cấm (bất kể độ dài)
+    if(candidates.length === 0) {
+        candidates = cleanWords.filter(w => !stopWords.includes(w.toLowerCase()));
+    }
+    
+    // Nếu vẫn không có (toàn từ cấm), lấy đại một từ bất kỳ ở giữa câu để đảm bảo luôn có lỗ đục
+    if(candidates.length === 0) {
+        return cleanWords[Math.floor(cleanWords.length / 2)];
+    }
+
+    // Chọn từ dài nhất trong danh sách ứng viên để đố cho hay
+    return candidates.reduce((a, b) => a.length >= b.length ? a : b);
 }
 
 fetch("subtitles.srt")
@@ -195,11 +138,15 @@ fetch("subtitles.srt")
                 const timePart = lines[1].split(" --> ");
                 const text = lines.slice(2).join(" ");
                 const key = chooseKeyword(text);
+                
+                // Tạo câu đố với dấu gạch dưới bám sát độ dài từ
+                const underscore = "_".repeat(key.length + 2);
+
                 subtitles.push({
                     start: timeToSec(timePart[0]),
                     end: timeToSec(timePart[1]),
                     full: text,
-                    blank: text.replace(new RegExp(key,"i"), "______"),
+                    blank: text.replace(new RegExp(`\\b${key}\\b`,"i"), underscore), // Dùng \\b để thay đúng từ, tránh thay nhầm từ con
                     answer: key
                 });
                 results.push(null);
@@ -219,7 +166,7 @@ function renderLine(i){
         player.playVideo();
     };
     div.innerHTML = `
-        <div class="row"><b>${s.blank}</b></div>
+        <div class="row"><b style="font-size: 1.1rem; color: #334155; line-height:1.5;">${s.blank}</b></div>
         <div class="row" style="margin-top:12px;" onclick="event.stopPropagation()">
             <input id="in${i}" placeholder="Type word..." onkeypress="if(event.key==='Enter') check(${i})">
             <button onclick="check(${i})">Check</button>
@@ -231,8 +178,10 @@ function renderLine(i){
 
 function check(i){
     const val = document.getElementById("in"+i).value.trim().toLowerCase();
+    const answer = subtitles[i].answer.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"");
     const res = document.getElementById("res"+i);
-    if(val === subtitles[i].answer.toLowerCase()){
+    
+    if(val === answer){
         res.textContent = "✔ Correct";
         res.className = "result correct";
         results[i] = true;
@@ -258,8 +207,6 @@ setInterval(() => {
         if(currentLineIndex !== -1) document.getElementById("line"+currentLineIndex).classList.remove("active");
         const currentEl = document.getElementById("line"+activeIndex);
         currentEl.classList.add("active");
-        
-        // Chỉ cuộn mượt khi ở chế độ PC hoặc cuộn trang ở mobile
         currentEl.scrollIntoView({ behavior: "smooth", block: "center" });
 
         if(document.getElementById("autoPauseToggle").checked && !pausedIndices.has(activeIndex)){
@@ -273,7 +220,7 @@ setInterval(() => {
 
 function showSummary(){
     const correct = results.filter(r => r === true).length;
-    document.getElementById("summaryResult").textContent = `Bạn đã đúng ${correct} / ${subtitles.length} câu.`;
+    document.getElementById("summaryResult").textContent = `Kết quả: ${correct} / ${subtitles.length} câu chính xác.`;
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 </script>
