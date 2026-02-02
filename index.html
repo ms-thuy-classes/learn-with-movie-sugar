@@ -38,7 +38,7 @@ header p{ margin:8px 0; color:#666; }
 }
 
 .subtitle-box{
-  max-height:70vh;
+  max-height:75vh;
   overflow-y:auto;
   scroll-behavior: smooth;
 }
@@ -52,20 +52,16 @@ header p{ margin:8px 0; color:#666; }
   cursor:pointer;
 }
 
-.subtitle-line:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 .subtitle-line.active{ background:var(--active); border-color: #93c5fd; }
 
 .row{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom: 8px; }
-.row:last-child { margin-bottom: 0; }
 
 input{
   padding:10px;
   border-radius:10px;
   border:1.5px solid #eee;
   width:150px;
-  outline: none;
 }
-input:focus { border-color: var(--accent); }
 
 button{
   padding:10px 16px;
@@ -75,20 +71,14 @@ button{
   background:var(--btn);
   color:white;
   font-weight:600;
-  transition: 0.2s;
 }
-button:hover { opacity: 0.9; transform: scale(1.02); }
 
-.trans-text { font-size: 0.9em; color: #666; font-style: italic; display: block; margin-top: 5px; }
+.trans-text { font-size: 0.85em; color: #777; font-style: italic; display: block; }
 .result{ font-size:14px; font-weight: 600; }
 .correct{ color:#16a34a; }
 .wrong{ color:#dc2626; }
 
 .summary{ margin:20px auto; max-width: 400px; text-align:center; }
-#summaryResult { font-weight: 600; margin-top: 10px; color: var(--accent); }
-
-/* Hiệu ứng loading đơn giản */
-.loading-text { font-size: 12px; color: #999; }
 </style>
 </head>
 
@@ -96,7 +86,7 @@ button:hover { opacity: 0.9; transform: scale(1.02); }
 
 <header>
   <h1>Learn English with Ms. Thúy</h1>
-  <p>Bài học: <b>Addicted to Sugar</b></p>
+  <p>Video: <b>Addicted to Sugar</b></p>
 </header>
 
 <div class="main">
@@ -109,12 +99,12 @@ button:hover { opacity: 0.9; transform: scale(1.02); }
   </div>
 
   <div class="card subtitle-box" id="subs">
-      <p style="text-align:center; color:#999;">Đang tải phụ đề và bản dịch...</p>
+      <p style="text-align:center;">Đang đọc file phụ đề...</p>
   </div>
 </div>
 
 <div class="summary card">
-  <button onclick="showSummary()" style="width: 100%;">📊 Xem tổng kết kết quả</button>
+  <button onclick="showSummary()" style="width: 100%;">📊 Tổng kết kết quả</button>
   <p id="summaryResult"></p>
 </div>
 
@@ -124,20 +114,19 @@ const stopWords=["the","a","an","to","of","and","or","is","was","were","be","hav
 let player;
 let subtitles = [], results = [];
 
-// YouTube API
 function onYouTubeIframeAPIReady(){ player = new YT.Player('player'); }
 const tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
 document.body.appendChild(tag);
 
-// Tự động dịch qua MyMemory API
+// API Dịch thuật MyMemory
 async function translateText(text) {
     try {
         const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|vi`);
         const data = await response.json();
-        return data.responseData.translatedText || "Không có bản dịch";
+        return data.responseData.translatedText || "Dịch tự động lỗi";
     } catch (e) {
-        return "Lỗi dịch thuật";
+        return "...";
     }
 }
 
@@ -146,30 +135,23 @@ function chooseKeyword(sentence){
     return words.length > 0 ? words[Math.floor(words.length/2)] : "sugar";
 }
 
-// Giả lập load file SRT (Vì không có file vật lý ở đây, tôi dùng chuỗi mẫu)
-// Trong thực tế, bạn dùng fetch("subtitles.srt") như cũ
-const demoSRT = `1
-00:00:01,000 --> 00:00:04,000
-Sugar is found in many different foods.
-
-2
-00:00:04,500 --> 00:00:08,000
-Many people are addicted to sweet drinks.
-
-3
-00:00:08,500 --> 00:00:12,000
-Eating too much sugar is bad for your health.`;
-
-async function initApp() {
-    // Để dùng file thật, hãy uncomment dòng dưới và comment dòng parseSRT(demoSRT)
-    // const res = await fetch("subtitles.srt"); const data = await res.text(); parseSRT(data);
-    parseSRT(demoSRT);
+function timeToSec(t){
+    const [h,m,s] = t.replace(",",".").split(":");
+    return +h*3600 + +m*60 + +s;
 }
+
+// === LOAD FILE THẬT ===
+fetch("subtitles.srt")
+    .then(r => r.text())
+    .then(data => parseSRT(data))
+    .catch(err => {
+        document.getElementById("subs").innerHTML = "Lỗi: Không tìm thấy file 'subtitles.srt' trong cùng thư mục.";
+    });
 
 async function parseSRT(data){
     const blocks = data.trim().split(/\n\n+/);
     const box = document.getElementById("subs");
-    box.innerHTML = ""; // Xóa dòng loading
+    box.innerHTML = ""; 
 
     for(let i=0; i < blocks.length; i++){
         const lines = blocks[i].split("\n");
@@ -177,27 +159,29 @@ async function parseSRT(data){
             const time = lines[1].split(" --> ");
             const text = lines.slice(2).join(" ");
             const key = chooseKeyword(text);
-            
-            // Gọi API dịch từng dòng
-            const viTranslation = await translateText(text);
 
-            subtitles.push({
+            const s = {
                 start: timeToSec(time[0]),
                 end: timeToSec(time[1]),
                 full: text,
                 blank: text.replace(new RegExp(key,"i"), "______"),
                 answer: key,
-                vi: viTranslation
-            });
+                vi: "Đang dịch..." // Tạm thời hiện cái này
+            };
+            
+            subtitles.push(s);
             results.push(null);
+            
+            // Vẽ giao diện ngay lập tức
             renderLine(i);
+
+            // Gọi dịch ngầm sau đó cập nhật lại
+            translateText(text).then(translated => {
+                subtitles[i].vi = translated;
+                document.getElementById(`trans${i}`).textContent = "🇻🇳 " + translated;
+            });
         }
     }
-}
-
-function timeToSec(t){
-    const [h,m,s] = t.replace(",",".").split(":");
-    return +h*3600 + +m*60 + +s;
 }
 
 function renderLine(i){
@@ -207,14 +191,14 @@ function renderLine(i){
     div.id = "line" + i;
     div.innerHTML = `
         <div class="row" onclick="player.seekTo(${s.start}, true)">
-            <b style="font-size: 1.1em; color: #444;">${s.blank}</b>
+            <b style="font-size: 1.05em;">${s.blank}</b>
         </div>
         <div class="row">
             <span class="trans-text" id="trans${i}">🇻🇳 ${s.vi}</span>
         </div>
-        <div class="row" style="margin-top:10px">
-            <input id="in${i}" placeholder="Điền từ còn thiếu..." onkeypress="if(event.key==='Enter') check(${i})">
-            <button onclick="check(${i})">Kiểm tra</button>
+        <div class="row">
+            <input id="in${i}" placeholder="Type word" onkeypress="if(event.key==='Enter') check(${i})">
+            <button onclick="check(${i})">Check</button>
             <span id="res${i}" class="result"></span>
         </div>
     `;
@@ -222,24 +206,19 @@ function renderLine(i){
 }
 
 function check(i){
-    const inputField = document.getElementById("in"+i);
-    const val = inputField.value.trim().toLowerCase();
+    const val = document.getElementById("in"+i).value.trim().toLowerCase();
     const res = document.getElementById("res"+i);
-
     if(val === subtitles[i].answer.toLowerCase()){
-        res.textContent = "✔ Chính xác!";
+        res.textContent = "✔ Correct";
         res.className = "result correct";
-        inputField.style.borderColor = "#16a34a";
         results[i] = true;
     } else {
-        res.textContent = "✘ Thử lại nhé";
+        res.textContent = "✘ Wrong";
         res.className = "result wrong";
-        inputField.style.borderColor = "#dc2626";
         results[i] = false;
     }
 }
 
-// Highlighting khi video chạy
 setInterval(() => {
     if(!player || !player.getCurrentTime) return;
     const t = player.getCurrentTime();
@@ -247,28 +226,24 @@ setInterval(() => {
         const line = document.getElementById("line" + i);
         if(line) {
             if(t >= s.start && t < s.end){
-                if(!line.classList.contains("active")){
-                    line.classList.add("active");
+                line.classList.add("active");
+                // Tự động cuộn mượt mà
+                if(line.getAttribute('data-scrolled') !== 'true'){
                     line.scrollIntoView({behavior: "smooth", block: "center"});
+                    line.setAttribute('data-scrolled', 'true');
                 }
             } else {
                 line.classList.remove("active");
+                line.removeAttribute('data-scrolled');
             }
         }
     });
-}, 500);
+}, 400);
 
 function showSummary(){
     const correct = results.filter(r => r === true).length;
-    const total = subtitles.length;
-    const percent = Math.round((correct/total)*100);
-    document.getElementById("summaryResult").innerHTML = 
-        `Kết quả: ${correct}/${total} câu (${percent}%)<br>` + 
-        (percent >= 80 ? "🎉 Tuyệt vời quá Ms. Thúy ơi!" : "💪 Cố gắng thêm chút nữa nhé!");
+    document.getElementById("summaryResult").textContent = `Bạn đã hoàn thành ${correct} / ${subtitles.length} câu.`;
 }
-
-// Khởi chạy
-initApp();
 </script>
 
 </body>
