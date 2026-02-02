@@ -5,66 +5,93 @@
 <title>Learn English Through Video</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
+:root{
+ --bg: linear-gradient(135deg,#fdfbfb,#e6f0ff);
+ --card: white;
+ --active: linear-gradient(90deg,#c7d2fe,#e0f2fe);
+ --btn: linear-gradient(135deg,#a5b4fc,#93c5fd);
+}
+
 body{
-    margin:0;
-    font-family:Poppins;
-    background:linear-gradient(135deg,#fdfbfb,#ebedee);
+ margin:0;
+ font-family:Poppins,sans-serif;
+ background:var(--bg);
 }
+
 .container{
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px;
-    padding:10px;
+ display:flex;
+ flex-wrap:wrap;
+ gap:14px;
+ padding:14px;
 }
+
 .video-box,.subtitle-box{
-    flex:1;
-    min-width:320px;
+ flex:1;
+ min-width:320px;
 }
+
 .subtitle-box{
-    background:white;
-    border-radius:16px;
-    padding:15px;
-    max-height:75vh;
-    overflow-y:auto;
+ background:var(--card);
+ border-radius:20px;
+ padding:16px;
+ max-height:75vh;
+ overflow-y:auto;
+ box-shadow:0 10px 25px rgba(0,0,0,.08);
 }
+
 .subtitle-line{
-    padding:10px;
-    margin-bottom:8px;
-    border-radius:12px;
-    transition:0.3s;
-    cursor:pointer;
+ padding:14px;
+ margin-bottom:12px;
+ border-radius:16px;
+ transition:.3s;
+ cursor:pointer;
 }
+
 .subtitle-line.active{
-    background:linear-gradient(90deg,#cfd9ff,#e2ebf0);
-    font-weight:600;
+ background:var(--active);
+ box-shadow:0 6px 18px rgba(99,102,241,.25);
 }
+
 input{
-    padding:5px;
-    border-radius:6px;
-    border:1px solid #ccc;
+ padding:8px;
+ border-radius:10px;
+ border:1px solid #ddd;
+ width:120px;
 }
+
 button{
-    padding:5px 10px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    background:#6c5ce7;
-    color:white;
+ padding:8px 14px;
+ border:none;
+ border-radius:12px;
+ cursor:pointer;
+ background:var(--btn);
+ color:white;
+ font-weight:500;
 }
+
 .result{
-    margin-left:6px;
-    font-size:13px;
+ margin-left:8px;
+ font-size:13px;
 }
-.correct{color:green}
-.wrong{color:red}
+
+.correct{color:#16a34a}
+.wrong{color:#dc2626}
+
 .summary{
-    margin-top:15px;
-    padding:10px;
-    background:#f1f5ff;
-    border-radius:10px;
+ margin:20px;
+ background:white;
+ padding:16px;
+ border-radius:18px;
+ text-align:center;
+ box-shadow:0 10px 25px rgba(0,0,0,.08);
+}
+
+@media(max-width:768px){
+ .container{flex-direction:column;}
+ input{width:100%}
 }
 </style>
 </head>
@@ -75,7 +102,7 @@ button{
 
 <!-- VIDEO -->
 <div class="video-box">
-<iframe id="player" width="100%" height="250"
+<iframe id="player" width="100%" height="260"
 src="https://www.youtube.com/embed/FjU9qyTZ_OU?enablejsapi=1"
 frameborder="0" allowfullscreen></iframe>
 </div>
@@ -85,115 +112,127 @@ frameborder="0" allowfullscreen></iframe>
 
 </div>
 
-<div class="container">
-<div class="subtitle-box summary">
-    <button onclick="showSummary()">📊 Tổng kết</button>
-    <p id="summaryResult"></p>
-</div>
+<div class="summary">
+<button onclick="showSummary()">📊 Tổng kết kết quả</button>
+<p id="summaryResult"></p>
 </div>
 
 <script>
-// ================= YOUTUBE API =================
+// ===== STOPWORDS (TỪ CHỨC NĂNG) =====
+const stopWords = [
+ "the","a","an","to","of","and","or","is","was","were","be",
+ "have","has","had","in","on","at","for","with","that","this",
+ "it","as","by","from","but","so","if","then","than"
+];
+
+// ===== YOUTUBE API =====
 let player;
 function onYouTubeIframeAPIReady(){
-    player = new YT.Player('player');
+ player = new YT.Player('player');
 }
 const tag=document.createElement('script');
 tag.src="https://www.youtube.com/iframe_api";
 document.body.appendChild(tag);
 
-// ================= LOAD SRT =================
+// ===== LOAD & PARSE SRT =====
+let subtitles=[], results=[];
+
 fetch("subtitles.srt")
-.then(res=>res.text())
+.then(r=>r.text())
 .then(parseSRT);
 
-let subtitles=[];
-let results=[];
+function timeToSec(t){
+ const [h,m,s]=t.replace(",",".").split(":");
+ return +h*3600 + +m*60 + +s;
+}
 
-function parseTime(t){
-    const [h,m,s]=t.replace(",",".").split(":");
-    return +h*3600 + +m*60 + +s;
+function chooseKeyword(sentence){
+ const words = sentence
+   .toLowerCase()
+   .replace(/[^a-z\s]/g,"")
+   .split(" ")
+   .filter(w => w.length>3 && !stopWords.includes(w));
+ return words[Math.floor(words.length/2)];
 }
 
 function parseSRT(data){
-    const blocks=data.trim().split(/\n\n+/);
-    blocks.forEach(b=>{
-        const lines=b.split("\n");
-        if(lines.length>=3){
-            const time=lines[1].split(" --> ");
-            const text=lines.slice(2).join(" ");
-            const words=text.split(" ");
-            const key=words[Math.floor(words.length/2)];
-            subtitles.push({
-                start:parseTime(time[0]),
-                end:parseTime(time[1]),
-                full:text,
-                blank:text.replace(key,"____"),
-                answer:key.toLowerCase()
-            });
-            results.push(null);
-        }
-    });
-    renderSubtitles();
+ const blocks=data.trim().split(/\n\n+/);
+ blocks.forEach(b=>{
+  const lines=b.split("\n");
+  if(lines.length>=3){
+   const time=lines[1].split(" --> ");
+   const text=lines.slice(2).join(" ");
+   const key=chooseKeyword(text);
+   subtitles.push({
+    start:timeToSec(time[0]),
+    end:timeToSec(time[1]),
+    full:text,
+    blank:text.replace(new RegExp(key,"i"),"_____"),
+    answer:key
+   });
+   results.push(null);
+  }
+ });
+ render();
 }
 
-// ================= RENDER =================
+// ===== RENDER =====
 const box=document.getElementById("subs");
 
-function renderSubtitles(){
-    subtitles.forEach((s,i)=>{
-        const div=document.createElement("div");
-        div.className="subtitle-line";
-        div.id="line"+i;
-        div.innerHTML=`
-            <div>${s.blank}</div>
-            <input id="input${i}" placeholder="Type word">
-            <button onclick="check(${i})">Check</button>
-            <span id="res${i}" class="result"></span>
-        `;
-        div.onclick=()=>player.seekTo(s.start,true);
-        box.appendChild(div);
-    });
+function render(){
+ subtitles.forEach((s,i)=>{
+  const div=document.createElement("div");
+  div.className="subtitle-line";
+  div.id="line"+i;
+  div.innerHTML=`
+   <div><b>${s.blank}</b></div>
+   <input id="in${i}" placeholder="Type word">
+   <button onclick="check(${i})">Check</button>
+   <span id="res${i}" class="result"></span>
+  `;
+  div.onclick=()=>player.seekTo(s.start,true);
+  box.appendChild(div);
+ });
 }
 
-// ================= AUTO HIGHLIGHT + SCROLL =================
+// ===== AUTO HIGHLIGHT + SCROLL =====
 setInterval(()=>{
-    if(!player || !player.getCurrentTime) return;
-    const t=player.getCurrentTime();
-
-    subtitles.forEach((s,i)=>{
-        const line=document.getElementById("line"+i);
-        if(t>=s.start && t<s.end){
-            line.classList.add("active");
-            line.scrollIntoView({behavior:"smooth",block:"center"});
-        }else{
-            line.classList.remove("active");
-        }
-    });
+ if(!player?.getCurrentTime) return;
+ const t=player.getCurrentTime();
+ subtitles.forEach((s,i)=>{
+  const line=document.getElementById("line"+i);
+  if(t>=s.start && t<s.end){
+   line.classList.add("active");
+   line.scrollIntoView({behavior:"smooth",block:"center"});
+  }else{
+   line.classList.remove("active");
+  }
+ });
 },300);
 
-// ================= CHECK =================
+// ===== CHECK =====
 function check(i){
-    const input=document.getElementById("input"+i).value.trim().toLowerCase();
-    const res=document.getElementById("res"+i);
-    if(input===subtitles[i].answer){
-        res.textContent="✔ Correct";
-        res.className="result correct";
-        results[i]=true;
-    }else{
-        res.textContent="✘ Wrong";
-        res.className="result wrong";
-        results[i]=false;
-    }
+ const v=document.getElementById("in"+i).value.trim().toLowerCase();
+ const res=document.getElementById("res"+i);
+ if(v===subtitles[i].answer){
+  res.textContent="✔ Correct";
+  res.className="result correct";
+  results[i]=true;
+ }else{
+  res.textContent="✘ Wrong";
+  res.className="result wrong";
+  results[i]=false;
+ }
 }
 
-// ================= SUMMARY =================
+// ===== SUMMARY =====
 function showSummary(){
-    const correct=results.filter(r=>r===true).length;
-    document.getElementById("summaryResult")
-        .textContent=`Bạn làm đúng ${correct} / ${subtitles.length} câu`;
+ const correct=results.filter(r=>r).length;
+ document.getElementById("summaryResult")
+  .textContent=`Bạn làm đúng ${correct} / ${subtitles.length} câu`;
 }
 </script>
 
 </body>
 </html>
+
