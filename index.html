@@ -38,17 +38,19 @@ header h1{ margin:0; font-size: 1.3rem; color: var(--btn); }
 .subtitle-box { overflow-y: visible; }
 @media(min-width:901px) { .subtitle-box { height: 75vh; overflow-y: auto; } }
 
-.subtitle-line{ padding:18px; margin-bottom:12px; border-radius:12px; border: 1px solid #f1f5f9; background: #fff; }
+.subtitle-line{ padding:18px; margin-bottom:12px; border-radius:12px; border: 1px solid #f1f5f9; background: #fff; transition: 0.3s; }
 .subtitle-line.active{ background: var(--active); border-color: #3b82f6; }
 
 .row{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom: 5px; }
-input{ padding:10px; border-radius:10px; border:1.5px solid #cbd5e1; width:150px; outline:none; font-size: 16px; }
+input{ padding:10px; border-radius:10px; border:1.5px solid #cbd5e1; width:150px; outline:none; font-size: 16px; transition: 0.2s; }
+input:focus { border-color: var(--btn); }
 
 button{ padding:10px 20px; border:none; border-radius:10px; cursor:pointer; background:var(--btn); color:white; font-weight:600; }
 
-.result{ font-size: 14px; font-weight: 600; margin-left: 5px; }
+.result{ font-size: 14px; font-weight: 600; margin-top: 5px; display: block; width: 100%; }
 .correct{ color:#10b981; }
 .wrong{ color:#ef4444; }
+.answer-hint { color: #6366f1; font-weight: bold; text-decoration: underline; }
 
 .summary-footer { margin-top: auto; padding: 20px; background: #fff; border-top: 1px solid #e2e8f0; text-align: center; }
 
@@ -92,7 +94,7 @@ let player;
 let subtitles = [], results = [];
 let currentLineIndex = -1;
 let pausedIndices = new Set();
-const stopWords=["the","a","an","to","of","and","or","is","was","were","be","have","has","had","in","on","at","for","with","that","this","it","as","by","from","but","so","if","then","than","you","are","aren't","your","my","their","his","her"];
+const stopWords=["the","a","an","to","of","and","or","is","was","were","be","have","has","had","in","on","at","for","with","that","this","it","as","by","from","but","so","if","then","than","you","are","aren't","your","my","their","his","her","about","very"];
 
 function onYouTubeIframeAPIReady(){ player = new YT.Player('player'); }
 const tag = document.createElement('script');
@@ -104,25 +106,11 @@ function timeToSec(t){
     return parseFloat(parts[0])*3600 + parseFloat(parts[1])*60 + parseFloat(parts[2]);
 }
 
-// HÀM CHỌN TỪ KHÓA CẢI TIẾN - SỬA LỖI KHÔNG ĐỤC LỖ
 function chooseKeyword(sentence){
-    // Loại bỏ dấu câu và tách từ
     let cleanWords = sentence.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"").split(/\s+/);
-    
-    // Tìm các từ không nằm trong danh sách cấm và dài > 3 ký tự
     let candidates = cleanWords.filter(w => w.length > 3 && !stopWords.includes(w.toLowerCase()));
-    
-    // Nếu không có từ > 3 ký tự, lấy các từ không nằm trong danh sách cấm (bất kể độ dài)
-    if(candidates.length === 0) {
-        candidates = cleanWords.filter(w => !stopWords.includes(w.toLowerCase()));
-    }
-    
-    // Nếu vẫn không có (toàn từ cấm), lấy đại một từ bất kỳ ở giữa câu để đảm bảo luôn có lỗ đục
-    if(candidates.length === 0) {
-        return cleanWords[Math.floor(cleanWords.length / 2)];
-    }
-
-    // Chọn từ dài nhất trong danh sách ứng viên để đố cho hay
+    if(candidates.length === 0) candidates = cleanWords.filter(w => !stopWords.includes(w.toLowerCase()));
+    if(candidates.length === 0) return cleanWords[Math.floor(cleanWords.length / 2)];
     return candidates.reduce((a, b) => a.length >= b.length ? a : b);
 }
 
@@ -138,15 +126,13 @@ fetch("subtitles.srt")
                 const timePart = lines[1].split(" --> ");
                 const text = lines.slice(2).join(" ");
                 const key = chooseKeyword(text);
-                
-                // Tạo câu đố với dấu gạch dưới bám sát độ dài từ
-                const underscore = "_".repeat(key.length + 2);
+                const underscore = "_".repeat(key.length + 1);
 
                 subtitles.push({
                     start: timeToSec(timePart[0]),
                     end: timeToSec(timePart[1]),
                     full: text,
-                    blank: text.replace(new RegExp(`\\b${key}\\b`,"i"), underscore), // Dùng \\b để thay đúng từ, tránh thay nhầm từ con
+                    blank: text.replace(new RegExp(`\\b${key}\\b`,"i"), underscore),
                     answer: key
                 });
                 results.push(null);
@@ -170,25 +156,27 @@ function renderLine(i){
         <div class="row" style="margin-top:12px;" onclick="event.stopPropagation()">
             <input id="in${i}" placeholder="Type word..." onkeypress="if(event.key==='Enter') check(${i})">
             <button onclick="check(${i})">Check</button>
-            <span id="res${i}" class="result"></span>
+            <div id="res${i}" class="result"></div>
         </div>
     `;
     document.getElementById("subs").appendChild(div);
 }
 
 function check(i){
-    const val = document.getElementById("in"+i).value.trim().toLowerCase();
-    const answer = subtitles[i].answer.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"");
+    const input = document.getElementById("in"+i);
+    const val = input.value.trim().toLowerCase();
+    const correctAnswer = subtitles[i].answer.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"");
     const res = document.getElementById("res"+i);
     
-    if(val === answer){
-        res.textContent = "✔ Correct";
-        res.className = "result correct";
+    if(val === correctAnswer){
+        res.innerHTML = `<span class="correct">✔ Correct!</span>`;
+        input.style.borderColor = "#10b981";
         results[i] = true;
         player.playVideo();
     } else {
-        res.textContent = "✘ Try again";
-        res.className = "result wrong";
+        // HIỂN THỊ ĐÁP ÁN ĐÚNG KHI SAI
+        res.innerHTML = `<span class="wrong">✘ Try again.</span> Đáp án: <span class="answer-hint">${subtitles[i].answer}</span>`;
+        input.style.borderColor = "#ef4444";
         results[i] = false;
     }
 }
@@ -220,7 +208,7 @@ setInterval(() => {
 
 function showSummary(){
     const correct = results.filter(r => r === true).length;
-    document.getElementById("summaryResult").textContent = `Kết quả: ${correct} / ${subtitles.length} câu chính xác.`;
+    document.getElementById("summaryResult").textContent = `Kết quả cuối cùng: ${correct} / ${subtitles.length} câu đúng.`;
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 </script>
