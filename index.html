@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Learn English with Ms. Thúy - Smart Pause</title>
+<title>Learn English with Ms. Thúy - Click to Translate</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
@@ -12,6 +12,7 @@
   --card: #ffffff;
   --active: linear-gradient(90deg, #dbeafe, #eff6ff);
   --btn: #6366f1;
+  --btn-secondary: #94a3b8;
   --text: #1e293b;
 }
 
@@ -57,10 +58,10 @@ header h1{ margin:0; font-size: 1.5rem; color: var(--btn); }
 .subtitle-line.active{ 
   background: var(--active); 
   border-color: #3b82f6;
-  transform: scale(1.01);
 }
 
-.row{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom: 5px; }
+.row{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom: 8px; }
+
 input{ padding:8px 12px; border-radius:8px; border:1px solid #cbd5e1; width:140px; outline:none; }
 
 button{
@@ -68,30 +69,43 @@ button{
   background:var(--btn); color:white; font-weight:500;
 }
 
-.trans-text { font-size: 0.85rem; color: #64748b; margin-top: 5px; display: block; }
+.btn-trans {
+  background: var(--btn-secondary);
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}
+
+.trans-display { 
+  font-size: 0.9rem; 
+  color: #475569; 
+  margin-top: 8px; 
+  display: none; 
+  background: #f1f5f9;
+  padding: 8px;
+  border-radius: 8px;
+  border-left: 4px solid var(--btn);
+}
+
 .result{ font-size: 13px; font-weight: 600; }
 .correct{ color:#10b981; }
 .wrong{ color:#ef4444; }
 
-/* Toggle Switch */
 .switch-container {
   display: flex; align-items: center; justify-content: center; gap: 10px;
   margin-bottom: 15px; font-size: 0.9rem; font-weight: 600;
 }
-.switch {
-  position: relative; display: inline-block; width: 44px; height: 22px;
-}
+.switch { position: relative; display: inline-block; width: 40px; height: 20px; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider {
   position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #ccc; transition: .4s; border-radius: 34px;
+  background-color: #ccc; transition: .4s; border-radius: 20px;
 }
 .slider:before {
-  position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+  position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px;
   background-color: white; transition: .4s; border-radius: 50%;
 }
 input:checked + .slider { background-color: var(--btn); }
-input:checked + .slider:before { transform: translateX(22px); }
+input:checked + .slider:before { transform: translateX(20px); }
 
 .subtitle-box::-webkit-scrollbar { width: 6px; }
 .subtitle-box::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -102,14 +116,14 @@ input:checked + .slider:before { transform: translateX(22px); }
 
 <header>
   <h1>Learn English with Ms. Thúy</h1>
-  <p>Video: <b>Addicted to Sugar</b></p>
+  <p><b>Video:</b> Addicted to Sugar</p>
 </header>
 
 <div class="main">
   <div class="video-container">
     <div class="card">
       <div class="switch-container">
-        <span>Tự động dừng khi có câu đố</span>
+        <span>Tự động dừng video</span>
         <label class="switch">
           <input type="checkbox" id="autoPauseToggle" checked>
           <span class="slider"></span>
@@ -130,7 +144,7 @@ input:checked + .slider:before { transform: translateX(22px); }
   </div>
 
   <div class="card subtitle-box" id="subs">
-      <p style="text-align:center; padding-top:20px;">Đang tải dữ liệu từ GitHub...</p>
+      <p style="text-align:center; padding-top:20px;">Đang tải phụ đề...</p>
   </div>
 </div>
 
@@ -138,7 +152,7 @@ input:checked + .slider:before { transform: translateX(22px); }
 let player;
 let subtitles = [], results = [];
 let currentLineIndex = -1;
-let pausedIndices = new Set(); // Để tránh dừng liên tục tại một dòng
+let pausedIndices = new Set();
 
 const stopWords=["the","a","an","to","of","and","or","is","was","were","be","have","has","had","in","on","at","for","with","that","this","it","as","by","from","but","so","if","then","than"];
 
@@ -147,12 +161,30 @@ const tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
 document.body.appendChild(tag);
 
-async function translateText(text) {
-    try {
-        const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|vi`);
-        const data = await response.json();
-        return data.responseData.translatedText;
-    } catch (e) { return "..."; }
+// Hàm gọi API dịch khi nhấn nút
+async function handleTranslate(i) {
+    const display = document.getElementById(`trans${i}`);
+    const btn = document.getElementById(`btnTrans${i}`);
+    
+    // Nếu đang hiển thị thì ẩn đi
+    if (display.style.display === "block") {
+        display.style.display = "none";
+        return;
+    }
+
+    // Nếu chưa có dữ liệu dịch thì gọi API
+    if (display.innerText === "...") {
+        btn.innerText = "Wait...";
+        try {
+            const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(subtitles[i].full)}&langpair=en|vi`);
+            const data = await response.json();
+            display.innerText = "🇻🇳 " + data.responseData.translatedText;
+        } catch (e) {
+            display.innerText = "Lỗi kết nối API";
+        }
+        btn.innerText = "Dịch";
+    }
+    display.style.display = "block";
 }
 
 function timeToSec(t){
@@ -165,42 +197,33 @@ function chooseKeyword(sentence){
     return words.length > 0 ? words[Math.floor(words.length/2)] : "sugar";
 }
 
+// Đọc file SRT
 fetch("subtitles.srt")
     .then(r => r.text())
-    .then(data => parseSRT(data))
-    .catch(() => { document.getElementById("subs").innerHTML = "Lỗi tải file .srt"; });
+    .then(data => {
+        const blocks = data.trim().split(/\n\r?\n/);
+        const box = document.getElementById("subs");
+        box.innerHTML = ""; 
 
-async function parseSRT(data){
-    const blocks = data.trim().split(/\n\r?\n/);
-    const box = document.getElementById("subs");
-    box.innerHTML = ""; 
+        blocks.forEach((block, i) => {
+            const lines = block.split(/\r?\n/);
+            if(lines.length >= 3){
+                const timePart = lines[1].split(" --> ");
+                const text = lines.slice(2).join(" ");
+                const key = chooseKeyword(text);
 
-    for(let i=0; i < blocks.length; i++){
-        const lines = blocks[i].split(/\r?\n/);
-        if(lines.length >= 3){
-            const timePart = lines[1].split(" --> ");
-            const text = lines.slice(2).join(" ");
-            const key = chooseKeyword(text);
-
-            subtitles.push({
-                start: timeToSec(timePart[0]),
-                end: timeToSec(timePart[1]),
-                full: text,
-                blank: text.replace(new RegExp(key,"i"), "______"),
-                answer: key,
-                vi: "Đang dịch..."
-            });
-            results.push(null);
-            renderLine(i);
-
-            translateText(text).then(res => {
-                subtitles[i].vi = res;
-                const el = document.getElementById(`trans${i}`);
-                if(el) el.textContent = "🇻🇳 " + res;
-            });
-        }
-    }
-}
+                subtitles.push({
+                    start: timeToSec(timePart[0]),
+                    end: timeToSec(timePart[1]),
+                    full: text,
+                    blank: text.replace(new RegExp(key,"i"), "______"),
+                    answer: key
+                });
+                results.push(null);
+                renderLine(i);
+            }
+        });
+    });
 
 function renderLine(i){
     const s = subtitles[i];
@@ -208,13 +231,16 @@ function renderLine(i){
     div.className = "subtitle-line";
     div.id = "line" + i;
     div.onclick = () => {
-        pausedIndices.delete(i); // Reset để có thể dừng lại nếu click thủ công
+        pausedIndices.delete(i);
         player.seekTo(s.start, true);
         player.playVideo();
     };
     div.innerHTML = `
-        <div class="row"><b style="font-size: 1.05rem;">${s.blank}</b></div>
-        <span class="trans-text" id="trans${i}">🇻🇳 Đang dịch...</span>
+        <div class="row">
+            <b style="font-size: 1.05rem; flex:1;">${s.blank}</b>
+            <button class="btn-trans" id="btnTrans${i}" onclick="event.stopPropagation(); handleTranslate(${i})">Dịch</button>
+        </div>
+        <div class="trans-display" id="trans${i}">...</div>
         <div class="row" style="margin-top:12px;" onclick="event.stopPropagation()">
             <input id="in${i}" placeholder="Điền từ..." onkeypress="if(event.key==='Enter') check(${i})">
             <button onclick="check(${i})">Check</button>
@@ -233,7 +259,7 @@ function check(i){
         res.textContent = "✔ Correct";
         res.className = "result correct";
         results[i] = true;
-        player.playVideo(); // Tự động phát tiếp khi đúng
+        player.playVideo();
     } else {
         res.textContent = "✘ Wrong";
         res.className = "result wrong";
@@ -241,7 +267,6 @@ function check(i){
     }
 }
 
-// Logic đồng bộ và Auto-Pause
 setInterval(() => {
     if(!player || !player.getCurrentTime || player.getPlayerState() !== 1) return;
     
@@ -256,27 +281,23 @@ setInterval(() => {
     }
 
     if(activeIndex !== -1 && activeIndex !== currentLineIndex){
-        // Xử lý Active UI
         if(currentLineIndex !== -1) document.getElementById("line"+currentLineIndex).classList.remove("active");
         const currentEl = document.getElementById("line"+activeIndex);
         currentEl.classList.add("active");
         currentEl.scrollIntoView({ behavior: "smooth", block: "center" });
 
-        // Logic Auto-Pause
-        const isAutoPauseOn = document.getElementById("autoPauseToggle").checked;
-        if(isAutoPauseOn && !pausedIndices.has(activeIndex)){
+        if(document.getElementById("autoPauseToggle").checked && !pausedIndices.has(activeIndex)){
             player.pauseVideo();
             pausedIndices.add(activeIndex);
-            document.getElementById("in"+activeIndex).focus(); // Tự động đưa con trỏ vào ô nhập
+            document.getElementById("in"+activeIndex).focus();
         }
-
         currentLineIndex = activeIndex;
     }
 }, 200);
 
 function showSummary(){
     const correct = results.filter(r => r === true).length;
-    document.getElementById("summaryResult").textContent = `Kết quả: ${correct} / ${subtitles.length} câu.`;
+    document.getElementById("summaryResult").textContent = `Bạn đã đúng ${correct} / ${subtitles.length} câu.`;
 }
 </script>
 
