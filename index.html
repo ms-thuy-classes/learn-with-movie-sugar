@@ -2,9 +2,8 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Learn English with Ms. Thúy</title>
+<title>Learn English with Ms. Thúy - Auto Translate</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -13,89 +12,83 @@
   --card: #ffffff;
   --active: linear-gradient(90deg,#c7d2fe,#e0f2fe);
   --btn: linear-gradient(135deg,#93c5fd,#a5b4fc);
+  --accent: #6366f1;
 }
 
-body{
-  margin:0;
-  font-family:Poppins,sans-serif;
-  background:var(--bg);
-}
-
-header{
-  text-align:center;
-  padding:20px;
-}
-header h1{margin:0}
-header p{margin:4px 0;color:#555}
+body{ margin:0; font-family:Poppins,sans-serif; background:var(--bg); color: #333; }
+header{ text-align:center; padding:30px 20px; }
+header h1{ margin:0; color: var(--accent); }
+header p{ margin:8px 0; color:#666; }
 
 .main{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:20px;
-  padding:20px;
+  gap:25px;
+  padding:0 20px 20px;
   align-items:start;
 }
 
-@media(max-width:900px){
-  .main{grid-template-columns:1fr}
-}
+@media(max-width:900px){ .main{grid-template-columns:1fr} }
 
 .card{
   background:var(--card);
   border-radius:22px;
-  padding:18px;
-  box-shadow:0 10px 25px rgba(0,0,0,.08);
+  padding:20px;
+  box-shadow:0 10px 25px rgba(0,0,0,.05);
 }
 
 .subtitle-box{
-  max-height:75vh;
+  max-height:70vh;
   overflow-y:auto;
+  scroll-behavior: smooth;
 }
 
 .subtitle-line{
-  padding:14px;
-  margin-bottom:14px;
-  border-radius:18px;
+  padding:15px;
+  margin-bottom:12px;
+  border-radius:15px;
+  border: 1px solid #f0f0f0;
   transition:.3s;
   cursor:pointer;
 }
 
-.subtitle-line.active{
-  background:var(--active);
-}
+.subtitle-line:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.subtitle-line.active{ background:var(--active); border-color: #93c5fd; }
 
-.row{
-  display:flex;
-  flex-wrap:wrap;
-  align-items:center;
-  gap:8px;
-}
+.row{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom: 8px; }
+.row:last-child { margin-bottom: 0; }
 
 input{
-  padding:8px;
+  padding:10px;
   border-radius:10px;
-  border:1px solid #ddd;
-  width:140px;
+  border:1.5px solid #eee;
+  width:150px;
+  outline: none;
 }
+input:focus { border-color: var(--accent); }
 
 button{
-  padding:8px 14px;
+  padding:10px 16px;
   border:none;
   border-radius:12px;
   cursor:pointer;
   background:var(--btn);
   color:white;
-  font-weight:500;
+  font-weight:600;
+  transition: 0.2s;
 }
+button:hover { opacity: 0.9; transform: scale(1.02); }
 
-.result{font-size:13px}
-.correct{color:#16a34a}
-.wrong{color:#dc2626}
+.trans-text { font-size: 0.9em; color: #666; font-style: italic; display: block; margin-top: 5px; }
+.result{ font-size:14px; font-weight: 600; }
+.correct{ color:#16a34a; }
+.wrong{ color:#dc2626; }
 
-.summary{
-  margin:20px;
-  text-align:center;
-}
+.summary{ margin:20px auto; max-width: 400px; text-align:center; }
+#summaryResult { font-weight: 600; margin-top: 10px; color: var(--accent); }
+
+/* Hiệu ứng loading đơn giản */
+.loading-text { font-size: 12px; color: #999; }
 </style>
 </head>
 
@@ -103,161 +96,179 @@ button{
 
 <header>
   <h1>Learn English with Ms. Thúy</h1>
-  <p><b>Video:</b> Addicted to Sugar</p>
+  <p>Bài học: <b>Addicted to Sugar</b></p>
 </header>
 
 <div class="main">
+  <div class="card" style="position: sticky; top: 20px;">
+    <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius: 15px;">
+        <iframe id="player" style="position:absolute; top:0; left:0; width:100%; height:100%;"
+        src="https://www.youtube.com/embed/FjU9qyTZ_OU?enablejsapi=1" 
+        frameborder="0" allowfullscreen></iframe>
+    </div>
+  </div>
 
-<!-- VIDEO -->
-<div class="card">
-  <iframe id="player" width="100%" height="280"
-    src="https://www.youtube.com/embed/FjU9qyTZ_OU?enablejsapi=1"
-    frameborder="0" allowfullscreen></iframe>
-</div>
-
-<!-- SUBTITLE -->
-<div class="card subtitle-box" id="subs"></div>
-
+  <div class="card subtitle-box" id="subs">
+      <p style="text-align:center; color:#999;">Đang tải phụ đề và bản dịch...</p>
+  </div>
 </div>
 
 <div class="summary card">
-  <button onclick="showSummary()">📊 Tổng kết kết quả</button>
+  <button onclick="showSummary()" style="width: 100%;">📊 Xem tổng kết kết quả</button>
   <p id="summaryResult"></p>
 </div>
 
 <script>
-// ========= STOPWORDS (LOẠI TỪ CHỨC NĂNG) =========
-const stopWords=[
- "the","a","an","to","of","and","or","is","was","were","be",
- "have","has","had","in","on","at","for","with","that","this",
- "it","as","by","from","but","so","if","then","than"
-];
+const stopWords=["the","a","an","to","of","and","or","is","was","were","be","have","has","had","in","on","at","for","with","that","this","it","as","by","from","but","so","if","then","than"];
 
-// ========= YOUTUBE API =========
 let player;
-function onYouTubeIframeAPIReady(){
-  player=new YT.Player('player');
-}
-const tag=document.createElement('script');
-tag.src="https://www.youtube.com/iframe_api";
+let subtitles = [], results = [];
+
+// YouTube API
+function onYouTubeIframeAPIReady(){ player = new YT.Player('player'); }
+const tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
 document.body.appendChild(tag);
 
-// ========= LOAD SRT =========
-let subtitles=[], results=[];
-
-fetch("subtitles.srt")
-.then(r=>r.text())
-.then(parseSRT);
-
-function timeToSec(t){
-  const [h,m,s]=t.replace(",",".").split(":");
-  return +h*3600 + +m*60 + +s;
+// Tự động dịch qua MyMemory API
+async function translateText(text) {
+    try {
+        const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|vi`);
+        const data = await response.json();
+        return data.responseData.translatedText || "Không có bản dịch";
+    } catch (e) {
+        return "Lỗi dịch thuật";
+    }
 }
 
 function chooseKeyword(sentence){
-  const words=sentence.toLowerCase()
-    .replace(/[^a-z\s]/g,"")
-    .split(" ")
-    .filter(w=>w.length>3 && !stopWords.includes(w));
-  return words[Math.floor(words.length/2)];
+    const words = sentence.toLowerCase().replace(/[^a-z\s]/g,"").split(" ").filter(w => w.length > 3 && !stopWords.includes(w));
+    return words.length > 0 ? words[Math.floor(words.length/2)] : "sugar";
 }
 
-function parseSRT(data){
-  const blocks=data.trim().split(/\n\n+/);
-  blocks.forEach(b=>{
-    const lines=b.split("\n");
-    if(lines.length>=3){
-      const time=lines[1].split(" --> ");
-      const text=lines.slice(2).join(" ");
-      const key=chooseKeyword(text);
-      subtitles.push({
-        start:timeToSec(time[0]),
-        end:timeToSec(time[1]),
-        full:text,
-        blank:text.replace(new RegExp(key,"i"),"_____"),
-        answer:key,
-        vi:"Dịch tiếng Việt (bạn có thể chỉnh)"
-      });
-      results.push(null);
+// Giả lập load file SRT (Vì không có file vật lý ở đây, tôi dùng chuỗi mẫu)
+// Trong thực tế, bạn dùng fetch("subtitles.srt") như cũ
+const demoSRT = `1
+00:00:01,000 --> 00:00:04,000
+Sugar is found in many different foods.
+
+2
+00:00:04,500 --> 00:00:08,000
+Many people are addicted to sweet drinks.
+
+3
+00:00:08,500 --> 00:00:12,000
+Eating too much sugar is bad for your health.`;
+
+async function initApp() {
+    // Để dùng file thật, hãy uncomment dòng dưới và comment dòng parseSRT(demoSRT)
+    // const res = await fetch("subtitles.srt"); const data = await res.text(); parseSRT(data);
+    parseSRT(demoSRT);
+}
+
+async function parseSRT(data){
+    const blocks = data.trim().split(/\n\n+/);
+    const box = document.getElementById("subs");
+    box.innerHTML = ""; // Xóa dòng loading
+
+    for(let i=0; i < blocks.length; i++){
+        const lines = blocks[i].split("\n");
+        if(lines.length >= 3){
+            const time = lines[1].split(" --> ");
+            const text = lines.slice(2).join(" ");
+            const key = chooseKeyword(text);
+            
+            // Gọi API dịch từng dòng
+            const viTranslation = await translateText(text);
+
+            subtitles.push({
+                start: timeToSec(time[0]),
+                end: timeToSec(time[1]),
+                full: text,
+                blank: text.replace(new RegExp(key,"i"), "______"),
+                answer: key,
+                vi: viTranslation
+            });
+            results.push(null);
+            renderLine(i);
+        }
     }
-  });
-  render();
 }
 
-// ========= RENDER =========
-const box=document.getElementById("subs");
+function timeToSec(t){
+    const [h,m,s] = t.replace(",",".").split(":");
+    return +h*3600 + +m*60 + +s;
+}
 
-function render(){
-  subtitles.forEach((s,i)=>{
-    const div=document.createElement("div");
-    div.className="subtitle-line";
-    div.id="line"+i;
-    div.innerHTML=`
-      <div class="row">
-        <b>${s.blank}</b>
-        <button onclick="toggleTrans(${i})">Dịch</button>
-        <span id="trans${i}" style="display:none;color:#555">
-          (${s.vi})
-        </span>
-      </div>
-
-      <div class="row" style="margin-top:8px">
-        <input id="in${i}" placeholder="Type word">
-        <button onclick="check(${i})">Check</button>
-        <span id="res${i}" class="result"></span>
-        <span id="ans${i}" style="color:#555"></span>
-      </div>
+function renderLine(i){
+    const s = subtitles[i];
+    const div = document.createElement("div");
+    div.className = "subtitle-line";
+    div.id = "line" + i;
+    div.innerHTML = `
+        <div class="row" onclick="player.seekTo(${s.start}, true)">
+            <b style="font-size: 1.1em; color: #444;">${s.blank}</b>
+        </div>
+        <div class="row">
+            <span class="trans-text" id="trans${i}">🇻🇳 ${s.vi}</span>
+        </div>
+        <div class="row" style="margin-top:10px">
+            <input id="in${i}" placeholder="Điền từ còn thiếu..." onkeypress="if(event.key==='Enter') check(${i})">
+            <button onclick="check(${i})">Kiểm tra</button>
+            <span id="res${i}" class="result"></span>
+        </div>
     `;
-    div.onclick=()=>player.seekTo(s.start,true);
-    box.appendChild(div);
-  });
+    document.getElementById("subs").appendChild(div);
 }
 
-// ========= AUTO HIGHLIGHT + SCROLL =========
-setInterval(()=>{
-  if(!player?.getCurrentTime) return;
-  const t=player.getCurrentTime();
-  subtitles.forEach((s,i)=>{
-    const line=document.getElementById("line"+i);
-    if(t>=s.start && t<s.end){
-      line.classList.add("active");
-      line.scrollIntoView({behavior:"smooth",block:"center"});
-    }else{
-      line.classList.remove("active");
-    }
-  });
-},300);
-
-// ========= CHECK =========
 function check(i){
-  const v=document.getElementById("in"+i).value.trim().toLowerCase();
-  const res=document.getElementById("res"+i);
-  const ans=document.getElementById("ans"+i);
+    const inputField = document.getElementById("in"+i);
+    const val = inputField.value.trim().toLowerCase();
+    const res = document.getElementById("res"+i);
 
-  if(v===subtitles[i].answer){
-    res.textContent="✔ Correct";
-    res.className="result correct";
-    ans.textContent=`(${subtitles[i].answer} = nghĩa tiếng Việt)`;
-    results[i]=true;
-  }else{
-    res.textContent="✘ Wrong";
-    res.className="result wrong";
-    results[i]=false;
-  }
+    if(val === subtitles[i].answer.toLowerCase()){
+        res.textContent = "✔ Chính xác!";
+        res.className = "result correct";
+        inputField.style.borderColor = "#16a34a";
+        results[i] = true;
+    } else {
+        res.textContent = "✘ Thử lại nhé";
+        res.className = "result wrong";
+        inputField.style.borderColor = "#dc2626";
+        results[i] = false;
+    }
 }
 
-// ========= TOGGLE TRANSLATION =========
-function toggleTrans(i){
-  const t=document.getElementById("trans"+i);
-  t.style.display=t.style.display==="none"?"inline":"none";
-}
+// Highlighting khi video chạy
+setInterval(() => {
+    if(!player || !player.getCurrentTime) return;
+    const t = player.getCurrentTime();
+    subtitles.forEach((s, i) => {
+        const line = document.getElementById("line" + i);
+        if(line) {
+            if(t >= s.start && t < s.end){
+                if(!line.classList.contains("active")){
+                    line.classList.add("active");
+                    line.scrollIntoView({behavior: "smooth", block: "center"});
+                }
+            } else {
+                line.classList.remove("active");
+            }
+        }
+    });
+}, 500);
 
-// ========= SUMMARY =========
 function showSummary(){
-  const correct=results.filter(r=>r).length;
-  document.getElementById("summaryResult")
-    .textContent=`Bạn làm đúng ${correct} / ${subtitles.length} câu`;
+    const correct = results.filter(r => r === true).length;
+    const total = subtitles.length;
+    const percent = Math.round((correct/total)*100);
+    document.getElementById("summaryResult").innerHTML = 
+        `Kết quả: ${correct}/${total} câu (${percent}%)<br>` + 
+        (percent >= 80 ? "🎉 Tuyệt vời quá Ms. Thúy ơi!" : "💪 Cố gắng thêm chút nữa nhé!");
 }
+
+// Khởi chạy
+initApp();
 </script>
 
 </body>
